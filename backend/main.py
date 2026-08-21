@@ -20,6 +20,9 @@ app = FastAPI(
     description="Production-level LangGraph AI Agent API"
 )
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 @app.middleware("http")
 async def request_id_middleware(
