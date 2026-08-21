@@ -11,3 +11,4 @@ sqlalchemy
 streamlit
 requests
 pytest
+langchain-google-genai

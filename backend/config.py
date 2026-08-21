@@ -6,6 +6,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+LLM_PROVIDER = os.getenv(
+    "LLM_PROVIDER",
+    "ollama"
+)
+
 LLM_MODEL = os.getenv(
     "LLM_MODEL",
     "llama3.2"
@@ -14,6 +19,10 @@ LLM_MODEL = os.getenv(
 OLLAMA_BASE_URL = os.getenv(
     "OLLAMA_BASE_URL",
     "http://127.0.0.1:11434"
+)
+
+GEMINI_API_KEY = os.getenv(
+    "GEMINI_API_KEY"
 )
 
 LLM_TEMPERATURE = float(

@@ -1,12 +1,18 @@
 from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from backend.agent.tools import TOOLS
-from backend.config import(
+from backend.config import (
+    LLM_PROVIDER,
     LLM_MODEL,
     OLLAMA_BASE_URL,
-    LLM_TEMPERATURE
+    GEMINI_API_KEY,
+    LLM_TEMPERATURE,
+    MAX_RETRIES,
+    LLM_TIMEOUT
 )
 from backend.logger import logger
+
 
 class Agent:
 
@@ -14,21 +20,39 @@ class Agent:
 
         logger.info("Initializing AI Agent")
 
-        self.llm = ChatOllama(
-            model=LLM_MODEL,
-            base_url=OLLAMA_BASE_URL,
-            temperature=LLM_TEMPERATURE
-        )
+        if LLM_PROVIDER == "ollama":
+
+            self.llm = ChatOllama(
+                model=LLM_MODEL,
+                base_url=OLLAMA_BASE_URL,
+                temperature=LLM_TEMPERATURE
+            )
+
+        elif LLM_PROVIDER == "gemini":
+
+            self.llm = ChatGoogleGenerativeAI(
+                model=LLM_MODEL,
+                google_api_key=GEMINI_API_KEY,
+                temperature=LLM_TEMPERATURE,
+                max_retries=MAX_RETRIES,
+                timeout=LLM_TIMEOUT
+            )
+
+        else:
+
+            raise ValueError(
+                f"Unsupported LLM provider: {LLM_PROVIDER}"
+            )
 
         self.tools = TOOLS
-        
 
         self.llm_with_tools = self.llm.bind_tools(
             self.tools
         )
 
         logger.info(
-            "Agent initialized with model: %s",
+            "Agent initialized with provider=%s, model=%s",
+            LLM_PROVIDER,
             LLM_MODEL
         )
 
@@ -53,10 +77,9 @@ class Agent:
             )
 
             raise
+
     def stream(self, messages):
 
         return self.llm_with_tools.stream(
-        messages
-    )
-        
-        
+            messages
+        )
