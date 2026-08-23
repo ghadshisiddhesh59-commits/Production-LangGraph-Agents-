@@ -3,27 +3,24 @@ from backend.database.connection import SessionLocal
 from backend.memory.repository import MemoryRepository
 from backend.logger import logger
 
+
 class AgentService:
 
     def __init__(self):
-
-      self.graph = graph
+        self.graph = graph
 
     def ask(
         self,
         question: str,
         session_id: str
     ):
-    
         logger.info(
             f"Agent request | session_id={session_id}"
         )
-    
 
         db = SessionLocal()
 
         try:
-
             memory = MemoryRepository(db)
 
             history = memory.get_messages(
@@ -44,12 +41,12 @@ class AgentService:
             )
 
             response = result["messages"][-1]
-            
+
             full_response = response.content
 
             if isinstance(full_response, list):
                 full_response = "".join(
-                    block.get("text","")
+                    block.get("text", "")
                     for block in full_response
                     if isinstance(block, dict)
                 )
@@ -73,15 +70,12 @@ class AgentService:
             return full_response
 
         except Exception:
-
             logger.exception(
                 f"Agent request failed | session_id={session_id}"
             )
-            
             raise
 
         finally:
-
             db.close()
 
     def stream(
@@ -89,11 +83,9 @@ class AgentService:
         question: str,
         session_id: str
     ):
-
         db = SessionLocal()
 
         try:
-
             memory = MemoryRepository(db)
 
             history = memory.get_messages(
@@ -109,15 +101,38 @@ class AgentService:
 
             full_response = ""
 
-            for chunk in self.agent.stream(
-                messages
+            for chunk in self.graph.stream(
+                {
+                    "messages": messages
+                },
+                stream_mode="updates"
             ):
 
-                if chunk.content:
+                if "agent" not in chunk:
+                    continue
 
-                    full_response += chunk.content
+                messages_update = chunk["agent"].get(
+                    "messages",
+                    []
+                )
 
-                    yield chunk.content
+                if not messages_update:
+                    continue
+
+                response = messages_update[-1]
+
+                content = response.content
+
+                if isinstance(content, list):
+                    content = "".join(
+                        block.get("text", "")
+                        for block in content
+                        if isinstance(block, dict)
+                    )
+
+                if content:
+                    full_response += content
+                    yield content
 
             memory.add_message(
                 session_id,
@@ -131,6 +146,11 @@ class AgentService:
                 full_response
             )
 
-        finally:
+        except Exception:
+            logger.exception(
+                f"Agent streaming failed | session_id={session_id}"
+            )
+            raise
 
+        finally:
             db.close()
