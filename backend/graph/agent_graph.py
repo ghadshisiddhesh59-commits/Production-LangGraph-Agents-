@@ -98,7 +98,7 @@ if __name__ == "__main__":
             "messages": [
                 {
                     "role": "user",
-                    "content": "What is 25 * 48?"
+                    "content": "What is 2 + 2?"
                 }
             ]
         }

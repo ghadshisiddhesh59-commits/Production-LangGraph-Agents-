@@ -1,4 +1,4 @@
-from backend.agent.agent import Agent
+from backend.graph.agent_graph import graph
 from backend.database.connection import SessionLocal
 from backend.memory.repository import MemoryRepository
 from backend.logger import logger
@@ -7,7 +7,7 @@ class AgentService:
 
     def __init__(self):
 
-        self.agent = Agent()
+      self.graph = graph
 
     def ask(
         self,
@@ -37,15 +37,22 @@ class AgentService:
                 }
             ]
 
-            full_response = ""
+            result = self.graph.invoke(
+                {
+                    "messages": messages
+                }
+            )
 
-            for chunk in self.agent.stream(
-                messages
-            ):
+            response = result["messages"][-1]
+            
+            full_response = response.content
 
-                if chunk.content:
-
-                    full_response += chunk.content
+            if isinstance(full_response, list):
+                full_response = "".join(
+                    block.get("text","")
+                    for block in full_response
+                    if isinstance(block, dict)
+                )
 
             memory.add_message(
                 session_id,
