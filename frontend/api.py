@@ -1,10 +1,17 @@
+import os
+
 import requests
 
-API_URL = "http://127.0.0.1:8000"
+
+API_URL = os.getenv(
+    "API_URL",
+    "http://127.0.0.1:8000"
+)
+
 
 def ask_question(
-        question: str,
-        session_id: str
+    question: str,
+    session_id: str
 ):
 
     response = requests.post(
@@ -20,9 +27,10 @@ def ask_question(
 
     return response.json()
 
+
 def stream_answer(
-        question: str,
-        session_id: str
+    question: str,
+    session_id: str
 ):
 
     response = requests.post(
@@ -33,7 +41,6 @@ def stream_answer(
         },
         stream=True,
         timeout=70
-
     )
 
     response.raise_for_status()
@@ -41,9 +48,7 @@ def stream_answer(
     for chunk in response.iter_content(
         chunk_size=None,
         decode_unicode=True
-
     ):
 
         if chunk:
-
             yield chunk
