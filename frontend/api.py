@@ -1,5 +1,4 @@
 import os
-
 import requests
 
 
@@ -20,35 +19,9 @@ def ask_question(
             "question": question,
             "session_id": session_id
         },
-        timeout=70
+        timeout=120
     )
 
     response.raise_for_status()
 
     return response.json()
-
-
-def stream_answer(
-    question: str,
-    session_id: str
-):
-
-    response = requests.post(
-        f"{API_URL}/ask/stream",
-        json={
-            "question": question,
-            "session_id": session_id
-        },
-        stream=True,
-        timeout=70
-    )
-
-    response.raise_for_status()
-
-    for chunk in response.iter_content(
-        chunk_size=None,
-        decode_unicode=True
-    ):
-
-        if chunk:
-            yield chunk

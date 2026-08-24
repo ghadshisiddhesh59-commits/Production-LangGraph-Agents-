@@ -1,54 +1,104 @@
-import os
+import uuid
 
-import requests
+import streamlit as st
+
+from frontend.api import ask_question
 
 
-API_URL = os.getenv(
-    "API_URL",
-    "http://127.0.0.1:8000"
+st.set_page_config(
+    page_title="Production AI Agent",
+    page_icon="🤖",
+    layout="wide"
 )
 
 
-def ask_question(
-    question: str,
-    session_id: str
-):
+# Session
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
 
-    response = requests.post(
-        f"{API_URL}/ask",
-        json={
-            "question": question,
-            "session_id": session_id
-        },
-        timeout=70
+
+# Messages
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+
+# Sidebar
+with st.sidebar:
+
+    st.title("Conversation")
+
+    if st.button("🗑️ New Conversation"):
+
+        st.session_state.session_id = str(
+            uuid.uuid4()
+        )
+
+        st.session_state.messages = []
+
+        st.rerun()
+
+
+# Header
+st.title("🤖 Production LangGraph AI Agent")
+
+st.caption(
+    "LangGraph + FastAPI + LLM Tools + Persistent Memory"
+)
+
+st.divider()
+
+
+# Existing messages
+for message in st.session_state.messages:
+
+    with st.chat_message(message["role"]):
+
+        st.markdown(message["content"])
+
+
+# Chat
+question = st.chat_input(
+    "Ask the AI agent anything..."
+)
+
+
+if question:
+
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": question
+        }
     )
 
-    response.raise_for_status()
+    with st.chat_message("user"):
+        st.markdown(question)
 
-    return response.json()
 
+    with st.chat_message("assistant"):
 
-def stream_answer(
-    question: str,
-    session_id: str
-):
+        with st.spinner("Thinking..."):
 
-    response = requests.post(
-        f"{API_URL}/ask/stream",
-        json={
-            "question": question,
-            "session_id": session_id
-        },
-        stream=True,
-        timeout=70
-    )
+            try:
 
-    response.raise_for_status()
+                result = ask_question(
+                    question,
+                    st.session_state.session_id
+                )
 
-    for chunk in response.iter_content(
-        chunk_size=None,
-        decode_unicode=True
-    ):
+                answer = result["answer"]
 
-        if chunk:
-            yield chunk
+                st.markdown(answer)
+
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": answer
+                    }
+                )
+
+            except Exception as e:
+
+                st.error(
+                    f"Request failed: {e}"
+                )
